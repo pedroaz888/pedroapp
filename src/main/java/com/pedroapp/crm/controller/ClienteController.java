@@ -4,11 +4,18 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
+
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties.Pageable;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -34,10 +41,13 @@ public class ClienteController {
 	
 	
 	@GetMapping
-	public Page<Cliente> listar(Principal principal){
+	@Cacheable(value = "listaClientes")
+	public Page<Cliente> listar(Principal princiapal){
 		
-		PageRequest paginacao = PageRequest.of(0,5);
+		Sort sort = Sort.by("id").descending();
+		PageRequest paginacao = PageRequest.of(0,5,sort);
 		
+			
 		return clienteRepository.findAll(paginacao);
 		
 	}
@@ -45,6 +55,7 @@ public class ClienteController {
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@Transactional
+	@CacheEvict(value = "listaClientes", allEntries=true )
 	public Cliente adicionar (@RequestBody Cliente cliente) {
 		return clienteRepository.save(cliente);
 	}
